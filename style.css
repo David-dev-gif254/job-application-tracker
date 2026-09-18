@@ -1,0 +1,472 @@
+/* ===============================
+   RESET
+================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+/* ===============================
+   PAGE
+================================ */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f3f4f6;
+    color: #1f2937;
+    line-height: 1.6;
+}
+
+
+/* ===============================
+   HEADER
+================================ */
+
+header {
+    background-color: #111827;
+    color: white;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+header h1 {
+    font-size: 34px;
+    margin-bottom: 8px;
+}
+
+header p {
+    color: #d1d5db;
+    font-size: 16px;
+}
+
+
+/* ===============================
+   MAIN
+================================ */
+
+main {
+    width: 92%;
+    max-width: 1100px;
+    margin: 35px auto;
+}
+
+
+/* ===============================
+   SECTIONS
+================================ */
+
+section {
+    background-color: white;
+    padding: 28px;
+    margin-bottom: 25px;
+    border-radius: 12px;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+section h2 {
+    font-size: 22px;
+    margin-bottom: 20px;
+}
+
+
+/* ===============================
+   DASHBOARD
+================================ */
+
+.stats {
+    display: grid;
+
+    grid-template-columns:
+        repeat(5, 1fr);
+
+    gap: 15px;
+}
+
+.stats div {
+    background-color: #f9fafb;
+
+    padding: 25px;
+
+    text-align: center;
+
+    border-radius: 10px;
+
+    border: 1px solid #e5e7eb;
+
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
+}
+
+.stats div:hover {
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.stats h3 {
+    font-size: 36px;
+
+    margin-bottom: 5px;
+
+    color: #2563eb;
+}
+
+.stats p {
+    color: #6b7280;
+}
+
+
+/* ===============================
+   FORMS
+================================ */
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+label {
+    font-weight: bold;
+    margin-top: 8px;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+
+    padding: 13px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 7px;
+
+    font-size: 15px;
+
+    font-family: inherit;
+
+    background-color: white;
+}
+
+textarea {
+    resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+
+/* ===============================
+   BUTTONS
+================================ */
+
+button {
+    padding: 13px 18px;
+
+    border: none;
+
+    border-radius: 7px;
+
+    font-size: 15px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s,
+        transform 0.1s;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+
+/* ===============================
+   ADD APPLICATION BUTTON
+================================ */
+
+.application-form button[type="submit"] {
+    background-color: #2563eb;
+
+    color: white;
+
+    margin-top: 10px;
+}
+
+.application-form button[type="submit"]:hover {
+    background-color: #1d4ed8;
+}
+
+
+/* ===============================
+   EDIT BUTTON
+================================ */
+
+.edit-button {
+    background-color: #f59e0b;
+
+    color: white;
+
+    margin-top: 12px;
+
+    margin-right: 6px;
+}
+
+.edit-button:hover {
+    background-color: #d97706;
+}
+
+
+/* ===============================
+   DELETE BUTTON
+================================ */
+
+.delete-button {
+    background-color: #dc2626;
+
+    color: white;
+
+    margin-top: 12px;
+}
+
+.delete-button:hover {
+    background-color: #b91c1c;
+}
+
+
+/* ===============================
+   SAVE CHANGES BUTTON
+================================ */
+
+#edit-form button[type="submit"] {
+    background-color: #16a34a;
+
+    color: white;
+
+    margin-top: 10px;
+}
+
+#edit-form button[type="submit"]:hover {
+    background-color: #15803d;
+}
+
+
+/* ===============================
+   CANCEL BUTTON
+================================ */
+
+#cancel-edit {
+    background-color: #6b7280;
+
+    color: white;
+
+    margin-top: 5px;
+}
+
+#cancel-edit:hover {
+    background-color: #4b5563;
+}
+
+
+/* ===============================
+   SEARCH & FILTER
+================================ */
+
+.application-controls {
+    display: grid;
+
+    grid-template-columns:
+        2fr 1fr;
+
+    gap: 15px;
+
+    margin-bottom: 25px;
+}
+
+
+/* ===============================
+   APPLICATION CARD
+================================ */
+
+.application {
+    padding: 22px;
+
+    margin-bottom: 18px;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    background-color: #fafafa;
+
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
+}
+
+.application:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.application h3 {
+    font-size: 20px;
+
+    margin-bottom: 10px;
+}
+
+.application p {
+    margin-bottom: 6px;
+
+    color: #4b5563;
+}
+
+.application strong {
+    color: #1f2937;
+}
+
+
+/* ===============================
+   STATUS BADGES
+================================ */
+
+.status-badge {
+    display: inline-block;
+
+    padding: 4px 10px;
+
+    border-radius: 20px;
+
+    font-size: 13px;
+
+    font-weight: bold;
+
+    margin-left: 4px;
+}
+
+
+/* Applied */
+
+.status-applied {
+    background-color: #dbeafe;
+
+    color: #1d4ed8;
+}
+
+
+/* Interview */
+
+.status-interview {
+    background-color: #fef3c7;
+
+    color: #92400e;
+}
+
+
+/* Rejected */
+
+.status-rejected {
+    background-color: #fee2e2;
+
+    color: #b91c1c;
+}
+
+
+/* Accepted */
+
+.status-accepted {
+    background-color: #dcfce7;
+
+    color: #15803d;
+}
+
+
+/* ===============================
+   JOB LINK
+================================ */
+
+.application a {
+    color: #2563eb;
+
+    text-decoration: none;
+
+    font-weight: bold;
+}
+
+.application a:hover {
+    text-decoration: underline;
+}
+
+
+/* ===============================
+   EMPTY MESSAGE
+================================ */
+
+.empty-message {
+    text-align: center;
+
+    color: #6b7280;
+
+    padding: 25px;
+}
+
+
+/* ===============================
+   MOBILE RESPONSIVENESS
+================================ */
+
+@media (max-width: 700px) {
+
+    header h1 {
+        font-size: 28px;
+    }
+
+    main {
+        width: 94%;
+    }
+
+    section {
+        padding: 20px;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .application-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .application {
+        padding: 18px;
+    }
+
+    button {
+        width: 100%;
+    }
+
+    .edit-button,
+    .delete-button {
+        margin-right: 0;
+    }
+}

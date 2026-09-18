@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Job Application Tracker</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Job Application Tracker</h1>
+        <p>Keep track of your job applications.</p>
+    </header>
+
+
+    <main>
+
+        <!-- Dashboard -->
+        <section class="dashboard">
+
+            <h2>Application Overview</h2>
+
+            <div class="stats">
+
+                <div class="stat-card">
+                    <h3 id="total-applications">0</h3>
+                    <p>Total Applications</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3 id="applied-count">0</h3>
+                    <p>Applied</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3 id="interview-count">0</h3>
+                    <p>Interviews</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3 id="accepted-count">0</h3>
+                    <p>Accepted</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3 id="rejected-count">0</h3>
+                    <p>Rejected</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Add Application -->
+        <section class="application-form">
+
+            <h2>Add Job Application</h2>
+
+            <form id="application-form">
+
+                <label for="company">
+                    Company Name:
+                </label>
+
+                <input
+                    type="text"
+                    id="company"
+                    placeholder="e.g. Safaricom"
+                    required
+                >
+
+
+                <label for="position">
+                    Job Position:
+                </label>
+
+                <input
+                    type="text"
+                    id="position"
+                    placeholder="e.g. Junior Web Developer"
+                    required
+                >
+
+
+                <label for="status">
+                    Application Status:
+                </label>
+
+                <select id="status">
+
+                    <option value="Applied">
+                        Applied
+                    </option>
+
+                    <option value="Interview">
+                        Interview
+                    </option>
+
+                    <option value="Rejected">
+                        Rejected
+                    </option>
+
+                    <option value="Accepted">
+                        Accepted
+                    </option>
+
+                </select>
+
+
+                <label for="application-date">
+                    Application Date:
+                </label>
+
+                <input
+                    type="date"
+                    id="application-date"
+                >
+
+
+                <label for="job-url">
+                    Job Posting URL:
+                </label>
+
+                <input
+                    type="url"
+                    id="job-url"
+                    placeholder="https://example.com/job"
+                >
+
+
+                <label for="notes">
+                    Notes:
+                </label>
+
+                <textarea
+                    id="notes"
+                    placeholder="Add notes about this application..."
+                    rows="4"
+                ></textarea>
+
+
+                <button type="submit">
+                    Add Application
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- Edit Application -->
+        <section
+            class="edit-form-section"
+            id="edit-section"
+            style="display: none;"
+        >
+
+            <h2>Edit Application</h2>
+
+            <form id="edit-form">
+
+                <label for="edit-company">
+                    Company Name:
+                </label>
+
+                <input
+                    type="text"
+                    id="edit-company"
+                    required
+                >
+
+
+                <label for="edit-position">
+                    Job Position:
+                </label>
+
+                <input
+                    type="text"
+                    id="edit-position"
+                    required
+                >
+
+
+                <label for="edit-status">
+                    Application Status:
+                </label>
+
+                <select id="edit-status">
+
+                    <option value="Applied">
+                        Applied
+                    </option>
+
+                    <option value="Interview">
+                        Interview
+                    </option>
+
+                    <option value="Rejected">
+                        Rejected
+                    </option>
+
+                    <option value="Accepted">
+                        Accepted
+                    </option>
+
+                </select>
+
+
+                <label for="edit-date">
+                    Application Date:
+                </label>
+
+                <input
+                    type="date"
+                    id="edit-date"
+                >
+
+
+                <label for="edit-url">
+                    Job Posting URL:
+                </label>
+
+                <input
+                    type="url"
+                    id="edit-url"
+                >
+
+
+                <label for="edit-notes">
+                    Notes:
+                </label>
+
+                <textarea
+                    id="edit-notes"
+                    rows="4"
+                ></textarea>
+
+
+                <button type="submit">
+                    Save Changes
+                </button>
+
+                <button
+                    type="button"
+                    id="cancel-edit"
+                >
+                    Cancel
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- Applications -->
+        <section class="applications">
+
+            <h2>My Job Applications</h2>
+
+
+            <!-- Search, Filter and Sort -->
+            <div class="application-controls">
+
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Search by company or position..."
+                >
+
+                <select id="status-filter">
+
+                    <option value="All">
+                        All Statuses
+                    </option>
+
+                    <option value="Applied">
+                        Applied
+                    </option>
+
+                    <option value="Interview">
+                        Interview
+                    </option>
+
+                    <option value="Rejected">
+                        Rejected
+                    </option>
+
+                    <option value="Accepted">
+                        Accepted
+                    </option>
+
+                </select>
+
+                <select id="sort-select">
+
+                    <option value="newest">
+                        Newest First
+                    </option>
+
+                    <option value="oldest">
+                        Oldest First
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- Clear All Button -->
+            <button
+                type="button"
+                id="clear-all"
+                class="clear-all-button"
+            >
+                Clear All Applications
+            </button>
+
+
+            <p class="empty-message">
+                No applications added yet.
+            </p>
+
+        </section>
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
