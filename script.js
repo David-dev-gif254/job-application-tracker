@@ -1,82 +1,66 @@
 // ===============================
-// GET HTML ELEMENTS
+// JOB APPLICATION TRACKER
 // ===============================
 
-const form =
-    document.querySelector("#application-form");
-
-const applicationsSection =
-    document.querySelector(".applications");
+const API_URL = "http://127.0.0.1:5000/api/applications";
 
 
-// Dashboard
-const totalApplications =
-    document.querySelector("#total-applications");
+// ===============================
+// HTML ELEMENTS
+// ===============================
 
-const appliedCount =
-    document.querySelector("#applied-count");
+const form = document.querySelector("#application-form");
+const applicationsSection = document.querySelector(".applications");
 
-const interviewCount =
-    document.querySelector("#interview-count");
+const totalApplications = document.querySelector("#total-applications");
+const appliedCount = document.querySelector("#applied-count");
+const interviewCount = document.querySelector("#interview-count");
+const acceptedCount = document.querySelector("#accepted-count");
+const rejectedCount = document.querySelector("#rejected-count");
 
-const acceptedCount =
-    document.querySelector("#accepted-count");
+const editSection = document.querySelector("#edit-section");
+const editForm = document.querySelector("#edit-form");
+const cancelEditButton = document.querySelector("#cancel-edit");
 
-const rejectedCount =
-    document.querySelector("#rejected-count");
+const searchInput = document.querySelector("#search-input");
+const statusFilter = document.querySelector("#status-filter");
+const sortSelect = document.querySelector("#sort-select");
 
-
-// Edit
-const editSection =
-    document.querySelector("#edit-section");
-
-const editForm =
-    document.querySelector("#edit-form");
-
-const cancelEditButton =
-    document.querySelector("#cancel-edit");
+const clearAllButton = document.querySelector("#clear-all");
 
 
-// Search and filter
-const searchInput =
-    document.querySelector("#search-input");
+// ===============================
+// APPLICATION DATA
+// ===============================
 
-const statusFilter =
-    document.querySelector("#status-filter");
-
-
-// Sort
-const sortSelect =
-    document.querySelector("#sort-select");
-
-
-// Clear All
-const clearAllButton =
-    document.querySelector("#clear-all");
+let applications = [];
+let editingId = null;
 
 
 // ===============================
 // LOAD APPLICATIONS
 // ===============================
 
-let applications =
-    JSON.parse(
-        localStorage.getItem("applications")
-    ) || [];
+async function loadApplications() {
 
-let editingIndex = null;
+    try {
 
+        const response = await fetch(API_URL);
 
-// ===============================
-// SAVE APPLICATIONS
-// ===============================
+        if (!response.ok) {
+            throw new Error("Failed to load applications.");
+        }
 
-function saveApplications() {
+        applications = await response.json();
 
-    localStorage.setItem(
-        "applications",
-        JSON.stringify(applications)
-    );
+        displayApplications();
+
+    } catch (error) {
+
+        console.error("Error loading applications:", error);
+
+        alert("Could not connect to Flask backend.");
+    }
 }
 
 
@@ -86,52 +70,27 @@ function saveApplications() {
 
 function updateStatistics() {
 
-    const total =
-        applications.length;
-
-
-    const applied =
-        applications.filter(
-            application =>
-                application.status === "Applied"
-        ).length;
-
-
-    const interviews =
-        applications.filter(
-            application =>
-                application.status === "Interview"
-        ).length;
-
-
-    const accepted =
-        applications.filter(
-            application =>
-                application.status === "Accepted"
-        ).length;
-
-
-    const rejected =
-        applications.filter(
-            application =>
-                application.status === "Rejected"
-        ).length;
-
-
-    totalApplications.textContent =
-        total;
+    totalApplications.textContent = applications.length;
 
     appliedCount.textContent =
-        applied;
+        applications.filter(
+            application => application.status === "Applied"
+        ).length;
 
     interviewCount.textContent =
-        interviews;
+        applications.filter(
+            application => application.status === "Interview"
+        ).length;
 
     acceptedCount.textContent =
-        accepted;
+        applications.filter(
+            application => application.status === "Accepted"
+        ).length;
 
     rejectedCount.textContent =
-        rejected;
+        applications.filter(
+            application => application.status === "Rejected"
+        ).length;
 }
 
 
@@ -141,42 +100,27 @@ function updateStatistics() {
 
 function createStatusBadge(status) {
 
-    const badge =
-        document.createElement("span");
+    const badge = document.createElement("span");
 
-    badge.className =
-        "status-badge";
-
+    badge.className = "status-badge";
 
     if (status === "Applied") {
-
-        badge.classList.add(
-            "status-applied"
-        );
-
-    } else if (status === "Interview") {
-
-        badge.classList.add(
-            "status-interview"
-        );
-
-    } else if (status === "Rejected") {
-
-        badge.classList.add(
-            "status-rejected"
-        );
-
-    } else if (status === "Accepted") {
-
-        badge.classList.add(
-            "status-accepted"
-        );
+        badge.classList.add("status-applied");
     }
 
+    else if (status === "Interview") {
+        badge.classList.add("status-interview");
+    }
 
-    badge.textContent =
-        status;
+    else if (status === "Rejected") {
+        badge.classList.add("status-rejected");
+    }
 
+    else if (status === "Accepted") {
+        badge.classList.add("status-accepted");
+    }
+
+    badge.textContent = status;
 
     return badge;
 }
@@ -189,109 +133,87 @@ function createStatusBadge(status) {
 function displayApplications() {
 
     const existingApplications =
-        applicationsSection.querySelectorAll(
-            ".application"
-        );
-
+        applicationsSection.querySelectorAll(".application");
 
     existingApplications.forEach(
-        application =>
-            application.remove()
+        application => application.remove()
     );
 
+    const existingMessage =
+        applicationsSection.querySelector(".empty-message");
 
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+
+    // SEARCH
     const searchText =
-        searchInput.value
-            .toLowerCase()
-            .trim();
+        searchInput.value.toLowerCase().trim();
 
 
+    // STATUS FILTER
     const selectedStatus =
         statusFilter.value;
 
 
-    // Create a copy so sorting
-    // does not change the original array
+    // FILTER
     let filteredApplications =
-        applications.filter(
-            function(application) {
+        applications.filter(function (application) {
 
-                const matchesSearch =
-                    application.company
-                        .toLowerCase()
-                        .includes(searchText) ||
+            const company =
+                application.company.toLowerCase();
 
-                    application.position
-                        .toLowerCase()
-                        .includes(searchText);
+            const position =
+                application.position.toLowerCase();
 
 
-                const matchesStatus =
-                    selectedStatus === "All" ||
-                    application.status === selectedStatus;
+            const
+            matchesSearch =
+                company.includes(searchText) ||
+                position.includes(searchText);
 
 
-                return (
-                    matchesSearch &&
-                    matchesStatus
-                );
-            }
-        );
+            const matchesStatus =
+                selectedStatus === "All" ||
+                application.status === selectedStatus;
+
+
+            return matchesSearch && matchesStatus;
+        });
 
 
     // ===============================
-    // SORT APPLICATIONS
+    // SORT
     // ===============================
 
-    filteredApplications.sort(
-        function(a, b) {
+    filteredApplications.sort(function (a, b) {
 
-            const dateA =
-                a.date || "";
-
-            const dateB =
-                b.date || "";
+        const dateA = a.date || "";
+        const dateB = b.date || "";
 
 
-            if (sortSelect.value === "newest") {
+        if (sortSelect.value === "newest") {
 
-                return dateB.localeCompare(dateA);
+            return dateB.localeCompare(dateA);
 
-            } else {
+        } else {
 
-                return dateA.localeCompare(dateB);
-
-            }
-
+            return dateA.localeCompare(dateB);
         }
-    );
+    });
 
 
     // ===============================
-    // EMPTY RESULTS
+    // NO RESULTS
     // ===============================
 
     if (filteredApplications.length === 0) {
 
-        let message =
-            applicationsSection.querySelector(
-                ".empty-message"
-            );
+        const message =
+            document.createElement("p");
 
-
-        if (!message) {
-
-            message =
-                document.createElement("p");
-
-            message.className =
-                "empty-message";
-
-            applicationsSection.appendChild(
-                message
-            );
-        }
-
+        message.className = "empty-message";
 
         if (applications.length === 0) {
 
@@ -302,9 +224,9 @@ function displayApplications() {
 
             message.textContent =
                 "No applications match your search.";
-
         }
 
+        applicationsSection.appendChild(message);
 
         updateStatistics();
 
@@ -312,266 +234,203 @@ function displayApplications() {
     }
 
 
-    const emptyMessage =
-        applicationsSection.querySelector(
-            ".empty-message"
-        );
-
-
-    if (emptyMessage) {
-        emptyMessage.remove();
-    }
-
-
     // ===============================
     // DISPLAY EACH APPLICATION
     // ===============================
 
-    filteredApplications.forEach(
-        function(application) {
+    filteredApplications.forEach(function (application) {
 
-            const index =
-                applications.indexOf(
-                    application
-                );
+        const applicationElement =
+            document.createElement("div");
 
-
-            const applicationElement =
-                document.createElement("div");
-
-            applicationElement.className =
-                "application";
+        applicationElement.className =
+            "application";
 
 
-            // ===============================
-            // COMPANY
-            // ===============================
+        // COMPANY
+        const title =
+            document.createElement("h3");
 
-            const title =
-                document.createElement("h3");
+        title.textContent =
+            application.company;
 
-            title.textContent =
-                application.company;
-
-
-            applicationElement.appendChild(
-                title
-            );
+        applicationElement.appendChild(title);
 
 
-            // ===============================
-            // POSITION
-            // ===============================
+        // POSITION
+        const position =
+            document.createElement("p");
 
-            const position =
+        const positionLabel =
+            document.createElement("strong");
+
+        positionLabel.textContent =
+            "Position: ";
+
+        position.appendChild(positionLabel);
+
+        position.appendChild(
+            document.createTextNode(
+                application.position
+            )
+        );
+
+        applicationElement.appendChild(position);
+
+
+        // STATUS
+        const statusParagraph =
+            document.createElement("p");
+
+        const statusLabel =
+            document.createElement("strong");
+
+        statusLabel.textContent =
+            "Status: ";
+
+        statusParagraph.appendChild(statusLabel);
+
+        statusParagraph.appendChild(
+            createStatusBadge(application.status)
+        );
+
+        applicationElement.appendChild(statusParagraph);
+
+
+        // DATE
+        const date =
+            document.createElement("p");
+
+        const dateLabel =
+            document.createElement("strong");
+
+        dateLabel.textContent =
+            "Application Date: ";
+
+        date.appendChild(dateLabel);
+
+        date.appendChild(
+            document.createTextNode(
+                application.date || "Not provided"
+            )
+        );
+
+        applicationElement.appendChild(date);
+
+
+        // JOB LINK
+        if (application.url) {
+
+            const urlParagraph =
                 document.createElement("p");
 
-            position.innerHTML =
-                "<strong>Position:</strong> " +
-                application.position;
-
-
-            applicationElement.appendChild(
-                position
-            );
-
-
-            // ===============================
-            // STATUS
-            // ===============================
-
-            const statusParagraph =
-                document.createElement("p");
-
-
-            const statusLabel =
+            const urlLabel =
                 document.createElement("strong");
 
-            statusLabel.textContent =
-                "Status: ";
+            urlLabel.textContent =
+                "Job Link: ";
+
+            urlParagraph.appendChild(urlLabel);
 
 
-            const statusBadge =
-                createStatusBadge(
-                    application.status
-                );
+            const link =
+                document.createElement("a");
+
+            link.href =
+                application.url;
+
+            link.target =
+                "_blank";
+
+            link.rel =
+                "noopener noreferrer";
+
+            link.textContent =
+                "View Job";
 
 
-            statusParagraph.appendChild(
-                statusLabel
-            );
-
-            statusParagraph.appendChild(
-                statusBadge
-            );
-
+            urlParagraph.appendChild(link);
 
             applicationElement.appendChild(
-                statusParagraph
+                urlParagraph
             );
+        }
 
 
-            // ===============================
-            // DATE
-            // ===============================
+        // NOTES
+        if (application.notes) {
 
-            const date =
+            const notes =
                 document.createElement("p");
 
-            date.innerHTML =
-                "<strong>Application Date:</strong> " +
-                (
-                    application.date ||
-                    "Not provided"
-                );
 
 
-            applicationElement.appendChild(
-                date
+            const notesLabel =
+            document.createElement("strong");
+
+            notesLabel.textContent =
+                "Notes: ";
+
+            notes.appendChild(notesLabel);
+
+            notes.appendChild(
+                document.createTextNode(
+                    application.notes
+                )
             );
 
-
-            // ===============================
-            // JOB LINK
-            // ===============================
-
-            if (application.url) {
-
-                const urlParagraph =
-                    document.createElement("p");
-
-                urlParagraph.innerHTML =
-                    "<strong>Job Link:</strong> ";
-
-
-                const link =
-                    document.createElement("a");
-
-                link.href =
-                    application.url;
-
-                link.target =
-                    "_blank";
-
-                link.rel =
-                    "noopener noreferrer";
-
-                link.textContent =
-                    "View Job";
-
-
-                urlParagraph.appendChild(
-                    link
-                );
-
-
-                applicationElement.appendChild(
-                    urlParagraph
-                );
-            }
-
-
-            // ===============================
-            // NOTES
-            // ===============================
-
-            if (application.notes) {
-
-                const notes =
-                    document.createElement("p");
-
-                notes.innerHTML =
-                    "<strong>Notes:</strong> " +
-                    application.notes;
-
-
-                applicationElement.appendChild(
-                    notes
-                );
-            }
-
-
-            // ===============================
-            // EDIT BUTTON
-            // ===============================
-
-            const editButton =
-                document.createElement("button");
-
-            editButton.className =
-                "edit-button";
-
-            editButton.textContent =
-                "Edit";
-
-
-            editButton.addEventListener(
-                "click",
-                function() {
-
-                    openEditForm(index);
-
-                }
-            );
-
-
-            applicationElement.appendChild(
-                editButton
-            );
-
-
-            // ===============================
-            // DELETE BUTTON
-            // ===============================
-
-            const deleteButton =
-                document.createElement("button");
-
-            deleteButton.className =
-                "delete-button";
-
-            deleteButton.textContent =
-                "Delete";
-
-
-            deleteButton.addEventListener(
-                "click",
-                function() {
-
-                    const confirmDelete =
-                        confirm(
-                            "Are you sure you want to delete this application?"
-                        );
-
-
-                    if (confirmDelete) {
-
-                        applications.splice(
-                            index,
-                            1
-                        );
-
-                        saveApplications();
-
-                        displayApplications();
-
-                    }
-
-                }
-            );
-
-
-            applicationElement.appendChild(
-                deleteButton
-            );
-
-
-            applicationsSection.appendChild(
-                applicationElement
-            );
-
+            applicationElement.appendChild(notes);
         }
-    );
+
+
+        // EDIT BUTTON
+        const editButton =
+            document.createElement("button");
+
+        editButton.className =
+            "edit-button";
+
+        editButton.textContent =
+            "Edit";
+
+        editButton.addEventListener(
+            "click",
+            function () {
+
+                openEditForm(application.id);
+            }
+        );
+
+        applicationElement.appendChild(editButton);
+
+
+        // DELETE BUTTON
+        const deleteButton =
+            document.createElement("button");
+
+        deleteButton.className =
+            "delete-button";
+
+        deleteButton.textContent =
+            "Delete";
+
+        deleteButton.addEventListener(
+            "click",
+            function () {
+
+                deleteApplication(application.id);
+            }
+        );
+
+        applicationElement.appendChild(deleteButton);
+
+
+        // ADD CARD TO PAGE
+        applicationsSection.appendChild(
+            applicationElement
+        );
+
+    });
 
 
     updateStatistics();
@@ -579,50 +438,155 @@ function displayApplications() {
 
 
 // ===============================
+// ADD APPLICATION
+// ===============================
+
+form.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        const company =
+            document.querySelector("#company").value.trim();
+
+        const position =
+            document.querySelector("#position").value.trim();
+
+        const status =
+            document.querySelector("#status").value;
+
+        const date =
+            document.querySelector("#application-date").value;
+
+        const url =
+            document.querySelector("#job-url").value.trim();
+
+        const notes =
+            document.querySelector("#notes").value.trim();
+
+
+        if (company === "" || position === "") {
+
+            alert(
+                "Please enter the company and job position."
+            );
+
+            return;
+        }
+
+
+        const newApplication = {
+
+            company: company,
+
+            position: position,
+
+            status: status,
+
+            date: date,
+
+            url: url,
+
+            notes: notes
+        };
+
+
+        try {
+
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                newApplication
+                            )
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Failed to save application."
+                );
+            }
+
+
+            const savedApplication =
+                await response.json();
+
+
+            applications.push(
+                savedApplication
+            );
+
+
+            displayApplications();
+
+            form.reset();
+
+
+        } catch (error) {
+
+            console.error(
+                "Error adding application:",
+                error
+            );
+
+            alert(
+                "Could not save application."
+            );
+        }
+    }
+);
+
+
+// ===============================
 // OPEN EDIT FORM
 // ===============================
 
-function openEditForm(index) {
-
-    editingIndex = index;
+function openEditForm(id) {
 
     const application =
-        applications[index];
+        applications.find(
+            application => application.id === id
+        );
 
 
-    document.querySelector(
-        "#edit-company"
-    ).value =
+    if (!application) {
+        return;
+    }
+
+
+    editingId = id;
+
+
+    document.querySelector("#edit-company").value =
         application.company;
 
-
-    document.querySelector(
-        "#edit-position"
-    ).value =
+    document.querySelector("#edit-position").value =
         application.position;
 
-
-    document.querySelector(
-        "#edit-status"
-    ).value =
+    document.querySelector("#edit-status").value =
         application.status;
 
-
-    document.querySelector(
-        "#edit-date"
-    ).value =
+    document.querySelector("#edit-date").value =
         application.date || "";
 
-
-    document.querySelector(
-        "#edit-url"
-    ).value =
+    document.querySelector("#edit-url").value =
         application.url || "";
 
-
-    document.querySelector(
-        "#edit-notes"
-    ).value =
+    document.querySelector("#edit-notes").value =
         application.notes || "";
 
 
@@ -642,17 +606,17 @@ function openEditForm(index) {
 
 editForm.addEventListener(
     "submit",
-    function(event) {
+    async function (event) {
 
         event.preventDefault();
 
 
-        if (editingIndex === null) {
+        if (editingId === null) {
             return;
         }
 
 
-        applications[editingIndex] = {
+        const updatedApplication = {
 
             company:
                 document.querySelector(
@@ -683,19 +647,77 @@ editForm.addEventListener(
                 document.querySelector(
                     "#edit-notes"
                 ).value.trim()
-
         };
 
 
-        saveApplications();
+        try {
 
-        displayApplications();
+            const response =
+                await fetch(
+                    `${API_URL}/${editingId}`,
+                    {
+                        method: "PUT",
+
+                        headers: {
+                            "Content-Type":
+         "application/json"
+                        },
+
+                        body:JSON.stringify(
+                                updatedApplication
+                            )
+                    }
+                );
 
 
-        editSection.style.display =
-            "none";
+            if (!response.ok) {
 
-        editingIndex = null;
+                throw new Error(
+                    "Failed to update application."
+                );
+            }
+
+
+            const updated =
+                await response.json();
+
+
+            const index =
+                applications.findIndex(
+                    application =>
+                        application.id === editingId
+                );
+
+
+            if (index !== -1) {
+
+                applications[index] =
+                    updated;
+            }
+
+
+            displayApplications();
+
+
+            editSection.style.display =
+                "none";
+
+
+            editingId =
+                null;
+
+
+        } catch (error) {
+
+            console.error(
+                "Error updating application:",
+                error
+            );
+
+            alert(
+                "Could not update application."
+            );
+        }
     }
 );
 
@@ -706,148 +728,75 @@ editForm.addEventListener(
 
 cancelEditButton.addEventListener(
     "click",
-    function() {
+    function () {
 
         editSection.style.display =
             "none";
 
-        editingIndex = null;
+        editingId =
+            null;
     }
 );
 
 
 // ===============================
-// ADD APPLICATION
+// DELETE APPLICATION
 // ===============================
 
-form.addEventListener(
-    "submit",
-    function(event) {
+async function deleteApplication(id) {
 
-        event.preventDefault();
-
-
-        const company =
-            document.querySelector(
-                "#company"
-            ).value.trim();
-
-
-        const position =
-            document.querySelector(
-                "#position"
-            ).value.trim();
-
-
-        const status =
-            document.querySelector(
-                "#status"
-            ).value;
-
-
-        const date =
-            document.querySelector(
-                "#application-date"
-            ).value;
-
-
-        const url =
-            document.querySelector(
-                "#job-url"
-            ).value.trim();
-
-
-        const notes =
-            document.querySelector(
-                "#notes"
-            ).value.trim();
-
-
-        if (
-            company === "" ||
-            position === ""
-        ) {
-
-            alert(
-                "Please enter the company and job position."
-            );
-
-            return;
-        }
-
-
-        const newApplication = {
-
-            company: company,
-
-            position: position,
-
-            status: status,
-
-            date: date,
-
-            url: url,
-
-            notes: notes
-
-        };
-
-
-        applications.push(
-            newApplication
+    const confirmDelete =
+        confirm(
+            "Are you sure you want to delete this application?"
         );
 
 
-        saveApplications();
+    if (!confirmDelete) {
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Failed to delete application."
+            );
+        }
+
+
+        applications =
+            applications.filter(
+                application =>
+                    application.id !== id
+            );
+
 
         displayApplications();
 
-        form.reset();
 
+    } catch (error) {
+
+        console.error(
+            "Error deleting application:",
+            error
+        );
+
+        alert(
+            "Could not delete application."
+        );
     }
-);
-
-
-// ===============================
-// SEARCH
-// ===============================
-
-searchInput.addEventListener(
-    "input",
-    function() {
-
-        displayApplications();
-
-    }
-);
-
-
-// ===============================
-// STATUS FILTER
-// ===============================
-
-statusFilter.addEventListener(
-    "change",
-    function() {
-
-        displayApplications();
-
-    }
-);
-
-
-// ===============================
-// SORT
-// ===============================
-
-sortSelect.addEventListener(
-    "change",
-    function() {
-
-        displayApplications();
-
-    }
-);
+}
 
 
 // ===============================
@@ -856,7 +805,7 @@ sortSelect.addEventListener(
 
 clearAllButton.addEventListener(
     "click",
-    function() {
+    async function () {
 
         if (applications.length === 0) {
 
@@ -874,22 +823,82 @@ clearAllButton.addEventListener(
             );
 
 
-        if (confirmClear) {
+        if (!confirmClear) {
+            return;
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+                        method: "DELETE"
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Failed to clear applications."
+                );
+            }
+
 
             applications = [];
 
-            saveApplications();
-
             displayApplications();
 
-        }
 
+        } catch (error) {
+
+            console.error(
+                "Error clearing applications:",
+                error
+            );
+
+            alert(
+                "Could not clear applications."
+            );
+        }
     }
 );
 
 
 // ===============================
-// INITIAL DISPLAY
+// SEARCH
 // ===============================
 
-displayApplications();
+searchInput.addEventListener(
+    "input",
+    displayApplications
+);
+
+
+// ===============================
+// STATUS FILTER
+// ===============================
+
+statusFilter.addEventListener(
+    "change",
+    displayApplications
+);
+
+
+// ===============================
+// SORT
+// ===============================
+
+sortSelect.addEventListener(
+    "change",
+    displayApplications
+);
+
+
+// ===============================
+// START APPLICATION
+// ===============================
+
+loadApplications();
