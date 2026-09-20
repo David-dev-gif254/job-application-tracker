@@ -3,15 +3,29 @@ from flask_cors import CORS
 import mysql.connector
 import os
 from dotenv import load_dotenv
+from datetime import datetime
+from urllib.parse import urlparse
 
 
-# Load environment variables from .env
+# Load environment variables
 load_dotenv()
 
 
 app = Flask(__name__)
 
 CORS(app)
+
+
+# ==========================================
+# SETTINGS
+# ==========================================
+
+ALLOWED_STATUSES = {
+    "Applied",
+    "Interview",
+    "Accepted",
+    "Rejected"
+}
 
 
 # ==========================================
@@ -27,6 +41,81 @@ def get_db_connection():
         password=os.getenv("DB_PASSWORD"),
         database=os.getenv("DB_NAME")
     )
+
+
+# ==========================================
+# VALIDATE APPLICATION DATA
+# ==========================================
+
+def validate_application(data):
+
+    if not isinstance(data, dict):
+        return "Invalid request data."
+
+
+    company = data.get("company", "").strip()
+    position = data.get("position", "").strip()
+    status = data.get("status", "Applied")
+    date = data.get("date")
+    url = data.get("url", "").strip()
+
+
+    # Company validation
+    if not company:
+
+        return "Company name is required."
+
+
+    if len(company) > 100:
+
+        return "Company name must be 100 characters or less."
+
+
+    # Position validation
+    if not position:
+
+        return "Position is required."
+
+
+    if len(position) > 150:
+
+        return "Position must be 150 characters or less."
+
+
+    # Status validation
+    if status not in ALLOWED_STATUSES:
+
+        return "Invalid application status."
+
+
+    # Date validation
+    if date:
+
+        try:
+
+            datetime.strptime(date, "%Y-%m-%d")
+
+        except ValueError:
+
+            return "Invalid date. Use YYYY-MM-DD."
+
+
+    # URL validation
+    if url:
+
+        parsed_url = urlparse(url)
+
+        if parsed_url.scheme not in ("http", "https"):
+
+            return "URL must start with http:// or https://"
+
+
+        if not parsed_url.netloc:
+
+            return "Please enter a valid URL."
+
+
+    return None
 
 
 # ==========================================
@@ -46,20 +135,40 @@ def home():
 @app.route("/api/applications", methods=["GET"])
 def get_applications():
 
-    connection = get_db_connection()
+    connection = None
+    cursor = None
 
-    cursor = connection.cursor(dictionary=True)
+    try:
 
-    cursor.execute(
-        "SELECT * FROM applications ORDER BY id DESC"
-    )
+        connection = get_db_connection()
 
-    applications = cursor.fetchall()
+        cursor = connection.cursor(dictionary=True)
 
-    cursor.close()
-    connection.close()
+        cursor.execute(
+            "SELECT * FROM applications ORDER BY id DESC"
+        )
 
-    return jsonify(applications)
+        applications = cursor.fetchall()
+
+        return jsonify(applications)
+
+
+    except mysql.connector.Error as error:
+
+        print("Database error:", error)
+
+        return jsonify({
+            "error": "Unable to load applications."
+        }), 500
+
+
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if connection:
+            connection.close()
 
 
 # ==========================================
@@ -71,63 +180,92 @@ def add_application():
 
     data = request.get_json()
 
-    company = data.get("company", "").strip()
-    position = data.get("position", "").strip()
+    error = validate_application(data)
+
+    if error:
+
+        return jsonify({
+            "error": error
+        }), 400
+
+
+    company = data.get("company").strip()
+    position = data.get("position").strip()
     status = data.get("status", "Applied")
     date = data.get("date") or None
     url = data.get("url", "").strip()
     notes = data.get("notes", "").strip()
 
 
-    if company == "" or position == "":
+    if len(notes) > 5000:
 
         return jsonify({
-            "error": "Company and position are required."
+            "error": "Notes must be 5000 characters or less."
         }), 400
 
 
-    connection = get_db_connection()
+    connection = None
+    cursor = None
 
-    cursor = connection.cursor()
+    try:
 
+        connection = get_db_connection()
 
-    sql = """
-        INSERT INTO applications
-        (company, position, status, date, url, notes)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """
+        cursor = connection.cursor()
 
 
-    values = (
-        company,
-        position,
-        status,
-        date,
-        url,
-        notes
-    )
+        sql = """
+            INSERT INTO applications
+            (company, position, status, date, url, notes)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
 
 
-    cursor.execute(sql, values)
+        values = (
+            company,
+            position,
+            status,
+            date,
+            url,
+            notes
+        )
 
-    connection.commit()
 
-    new_id = cursor.lastrowid
+        cursor.execute(sql, values)
 
-
-    cursor.close()
-    connection.close()
+        connection.commit()
 
 
-    return jsonify({
-        "id": new_id,
-        "company": company,
-        "position": position,
-        "status": status,
-        "date": date,
-        "url": url,
-        "notes": notes
-    }), 201
+        new_id = cursor.lastrowid
+
+
+        return jsonify({
+            "id": new_id,
+            "company": company,
+            "position": position,
+            "status": status,
+            "date": date,
+            "url": url,
+            "notes": notes
+        }), 201
+
+
+    except mysql.connector.Error as error:
+
+        print("Database error:", error)
+
+        return jsonify({
+            "error": "Unable to save application."
+        }), 500
+
+
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if connection:
+            connection.close()
 
 
 # ==========================================
@@ -142,80 +280,105 @@ def update_application(application_id):
 
     data = request.get_json()
 
-    company = data.get("company", "").strip()
-    position = data.get("position", "").strip()
+    error = validate_application(data)
+
+    if error:
+
+        return jsonify({
+            "error": error
+        }), 400
+
+
+    company = data.get("company").strip()
+    position = data.get("position").strip()
     status = data.get("status", "Applied")
     date = data.get("date") or None
     url = data.get("url", "").strip()
     notes = data.get("notes", "").strip()
 
 
-    if company == "" or position == "":
+    if len(notes) > 5000:
 
         return jsonify({
-            "error": "Company and position are required."
+            "error": "Notes must be 5000 characters or less."
         }), 400
 
 
-    connection = get_db_connection()
+    connection = None
+    cursor = None
 
-    cursor = connection.cursor()
+    try:
 
+        connection = get_db_connection()
 
-    sql = """
-        UPDATE applications
-
-        SET
-            company = %s,
-            position = %s,
-            status = %s,
-            date = %s,
-            url = %s,
-            notes = %s
-
-        WHERE id = %s
-    """
+        cursor = connection.cursor()
 
 
-    values = (
-        company,
-        position,
-        status,
-        date,
-        url,
-        notes,
-        application_id
-    )
+        sql = """
+            UPDATE applications
+
+            SET
+                company = %s,
+                position = %s,
+                status = %s,
+                date = %s,
+                url = %s,
+                notes = %s
+
+            WHERE id = %s
+        """
 
 
-    cursor.execute(sql, values)
+        values = (
+            company,
+            position,
+            status,
+            date,
+            url,
+            notes,
+            application_id
+        )
 
-    connection.commit()
+
+        cursor.execute(sql, values)
+
+        connection.commit()
 
 
-    if cursor.rowcount == 0:
+        if cursor.rowcount == 0:
 
-        cursor.close()
-        connection.close()
+            return jsonify({
+                "error": "Application not found."
+            }), 404
+
 
         return jsonify({
-            "error": "Application not found."
-        }), 404
+            "id": application_id,
+            "company": company,
+            "position": position,
+            "status": status,
+            "date": date,
+            "url": url,
+            "notes": notes
+        })
 
 
-    cursor.close()
-    connection.close()
+    except mysql.connector.Error as error:
+
+        print("Database error:", error)
+
+        return jsonify({
+            "error": "Unable to update application."
+        }), 500
 
 
-    return jsonify({
-        "id": application_id,
-        "company": company,
-        "position": position,
-        "status": status,
-        "date": date,
-        "url": url,
-        "notes": notes
-    })
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if connection:
+            connection.close()
 
 
 # ==========================================
@@ -228,37 +391,53 @@ def update_application(application_id):
 )
 def delete_application(application_id):
 
-    connection = get_db_connection()
+    connection = None
+    cursor = None
 
-    cursor = connection.cursor()
+    try:
 
+        connection = get_db_connection()
 
-    cursor.execute(
-        "DELETE FROM applications WHERE id = %s",
-        (application_id,)
-    )
-
-
-    connection.commit()
+        cursor = connection.cursor()
 
 
-    if cursor.rowcount == 0:
+        cursor.execute(
+            "DELETE FROM applications WHERE id = %s",
+            (application_id,)
+        )
 
-        cursor.close()
-        connection.close()
+
+        connection.commit()
+
+
+        if cursor.rowcount == 0:
+
+            return jsonify({
+                "error": "Application not found."
+            }), 404
+
 
         return jsonify({
-            "error": "Application not found."
-        }), 404
+            "message": "Application deleted successfully."
+        })
 
 
-    cursor.close()
-    connection.close()
+    except mysql.connector.Error as error:
+
+        print("Database error:", error)
+
+        return jsonify({
+            "error": "Unable to delete application."
+        }), 500
 
 
-    return jsonify({
-        "message": "Application deleted successfully."
-    })
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if connection:
+            connection.close()
 
 
 # ==========================================
@@ -271,26 +450,45 @@ def delete_application(application_id):
 )
 def delete_all_applications():
 
-    connection = get_db_connection()
+    connection = None
+    cursor = None
 
-    cursor = connection.cursor()
+    try:
 
+        connection = get_db_connection()
 
-    cursor.execute(
-        "DELETE FROM applications"
-    )
-
-
-    connection.commit()
+        cursor = connection.cursor()
 
 
-    cursor.close()
-    connection.close()
+        cursor.execute(
+            "DELETE FROM applications"
+        )
 
 
-    return jsonify({
-        "message": "All applications deleted successfully."
-    })
+        connection.commit()
+
+
+        return jsonify({
+            "message": "All applications deleted successfully."
+        })
+
+
+    except mysql.connector.Error as error:
+
+        print("Database error:", error)
+
+        return jsonify({
+            "error": "Unable to delete applications."
+        }), 500
+
+
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if connection:
+            connection.close()
 
 
 # ==========================================
@@ -300,25 +498,42 @@ def delete_all_applications():
 @app.route("/api/test")
 def test():
 
-    connection = get_db_connection()
+    connection = None
+    cursor = None
 
-    cursor = connection.cursor()
+    try:
 
-    cursor.execute(
-        "SELECT 1"
-    )
+        connection = get_db_connection()
 
-    result = cursor.fetchone()
+        cursor = connection.cursor()
 
+        cursor.execute("SELECT 1")
 
-    cursor.close()
-    connection.close()
+        result = cursor.fetchone()
 
 
-    return jsonify({
-        "message": "Flask and MySQL are connected!",
-        "database_test": result[0]
-    })
+        return jsonify({
+            "message": "Flask and MySQL are connected!",
+            "database_test": result[0]
+        })
+
+
+    except mysql.connector.Error as error:
+
+        print("Database error:", error)
+
+        return jsonify({
+            "error": "Database connection failed."
+        }), 500
+
+
+    finally:
+
+        if cursor:
+            cursor.close()
+
+        if connection:
+            connection.close()
 
 
 # ==========================================
