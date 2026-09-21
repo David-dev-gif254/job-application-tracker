@@ -2,8 +2,7 @@
 // JOB APPLICATION TRACKER
 // ===============================
 
-const API_URL = "http://127.0.0.1:5000/api/applications";
-
+const API_URL = "https://job-application-tracker-cp1z.onrender.com/api/applications";
 
 // ===============================
 // HTML ELEMENTS
