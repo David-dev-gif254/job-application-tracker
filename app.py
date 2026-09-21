@@ -38,7 +38,7 @@ def get_db_connection():
         host=os.getenv("DB_HOST"),
         port=int(os.getenv("DB_PORT", 3306)),
         user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
+        password=os.getenv("#DB_PASSWORD"),
         database=os.getenv("DB_NAME")
     )
 
@@ -541,5 +541,5 @@ def test():
 # ==========================================
 
 if __name__ == "__main__":
-
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
