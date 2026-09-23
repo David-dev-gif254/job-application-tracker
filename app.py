@@ -387,16 +387,14 @@ def delete_all_applications():
             connection.close()
 
 
+# Create the database table when the application starts
+try:
+    initialize_database()
+    print("Database initialized successfully.")
+except Exception as error:
+    print("Database initialization failed:", error)
+
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-
-    try:
-        initialize_database()
-    except Exception as error:
-        print("Database initialization failed:", error)
-
-    app.run(
-        host="0.0.0.0",
-        port=port,
-        debug=False
-    )
+    app.run(host="0.0.0.0", port=port, debug=False)
