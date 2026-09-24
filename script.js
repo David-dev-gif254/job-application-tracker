@@ -146,17 +146,26 @@ function displayApplications() {
     }
 
 
+    // ===============================
     // SEARCH
+    // ===============================
+
     const searchText =
         searchInput.value.toLowerCase().trim();
 
 
+    // ===============================
     // STATUS FILTER
+    // ===============================
+
     const selectedStatus =
         statusFilter.value;
 
 
+    // ===============================
     // FILTER
+    // ===============================
+
     let filteredApplications =
         applications.filter(function (application) {
 
@@ -166,17 +175,13 @@ function displayApplications() {
             const position =
                 application.position.toLowerCase();
 
-
-            const
-            matchesSearch =
+            const matchesSearch =
                 company.includes(searchText) ||
                 position.includes(searchText);
-
 
             const matchesStatus =
                 selectedStatus === "All" ||
                 application.status === selectedStatus;
-
 
             return matchesSearch && matchesStatus;
         });
@@ -190,7 +195,6 @@ function displayApplications() {
 
         const dateA = a.date || "";
         const dateB = b.date || "";
-
 
         if (sortSelect.value === "newest") {
 
@@ -246,7 +250,10 @@ function displayApplications() {
             "application";
 
 
+        // ===============================
         // COMPANY
+        // ===============================
+
         const title =
             document.createElement("h3");
 
@@ -256,7 +263,10 @@ function displayApplications() {
         applicationElement.appendChild(title);
 
 
+        // ===============================
         // POSITION
+        // ===============================
+
         const position =
             document.createElement("p");
 
@@ -277,7 +287,10 @@ function displayApplications() {
         applicationElement.appendChild(position);
 
 
+        // ===============================
         // STATUS
+        // ===============================
+
         const statusParagraph =
             document.createElement("p");
 
@@ -296,7 +309,10 @@ function displayApplications() {
         applicationElement.appendChild(statusParagraph);
 
 
+        // ===============================
         // DATE
+        // ===============================
+
         const date =
             document.createElement("p");
 
@@ -317,7 +333,10 @@ function displayApplications() {
         applicationElement.appendChild(date);
 
 
+        // ===============================
         // JOB LINK
+        // ===============================
+
         if (application.url) {
 
             const urlParagraph =
@@ -330,7 +349,6 @@ function displayApplications() {
                 "Job Link: ";
 
             urlParagraph.appendChild(urlLabel);
-
 
             const link =
                 document.createElement("a");
@@ -347,7 +365,6 @@ function displayApplications() {
             link.textContent =
                 "View Job";
 
-
             urlParagraph.appendChild(link);
 
             applicationElement.appendChild(
@@ -356,16 +373,17 @@ function displayApplications() {
         }
 
 
+        // ===============================
         // NOTES
+        // ===============================
+
         if (application.notes) {
 
             const notes =
                 document.createElement("p");
 
-
-
             const notesLabel =
-            document.createElement("strong");
+                document.createElement("strong");
 
             notesLabel.textContent =
                 "Notes: ";
@@ -382,7 +400,10 @@ function displayApplications() {
         }
 
 
+        // ===============================
         // EDIT BUTTON
+        // ===============================
+
         const editButton =
             document.createElement("button");
 
@@ -403,7 +424,10 @@ function displayApplications() {
         applicationElement.appendChild(editButton);
 
 
+        // ===============================
         // DELETE BUTTON
+        // ===============================
+
         const deleteButton =
             document.createElement("button");
 
@@ -424,7 +448,10 @@ function displayApplications() {
         applicationElement.appendChild(deleteButton);
 
 
+        // ===============================
         // ADD CARD TO PAGE
+        // ===============================
+
         applicationsSection.appendChild(
             applicationElement
         );
@@ -445,7 +472,6 @@ form.addEventListener(
     async function (event) {
 
         event.preventDefault();
-
 
         const company =
             document.querySelector("#company").value.trim();
@@ -515,22 +541,25 @@ form.addEventListener(
 
             if (!response.ok) {
 
+                const errorData =
+                    await response.json().catch(
+                        () => ({})
+                    );
+
                 throw new Error(
+                    errorData.error ||
                     "Failed to save application."
                 );
             }
 
 
-            const savedApplication =
-                await response.json();
+            // The backend saves the application successfully.
+            // Reload the complete list from PostgreSQL.
+
+            await loadApplications();
 
 
-            applications.push(
-                savedApplication
-            );
-
-
-            displayApplications();
+            // Clear the form.
 
             form.reset();
 
@@ -543,7 +572,8 @@ form.addEventListener(
             );
 
             alert(
-                "Could not save application."
+                "Could not save application: " +
+                error.message
             );
         }
     }
@@ -659,10 +689,11 @@ editForm.addEventListener(
 
                         headers: {
                             "Content-Type":
-         "application/json"
+                                "application/json"
                         },
 
-                        body:JSON.stringify(
+                        body:
+                            JSON.stringify(
                                 updatedApplication
                             )
                     }
@@ -671,31 +702,21 @@ editForm.addEventListener(
 
             if (!response.ok) {
 
+                const errorData =
+                    await response.json().catch(
+                        () => ({})
+                    );
+
                 throw new Error(
+                    errorData.error ||
                     "Failed to update application."
                 );
             }
 
 
-            const updated =
-                await response.json();
+            // Reload the complete list from PostgreSQL.
 
-
-            const index =
-                applications.findIndex(
-                    application =>
-                        application.id === editingId
-                );
-
-
-            if (index !== -1) {
-
-                applications[index] =
-                    updated;
-            }
-
-
-            displayApplications();
+            await loadApplications();
 
 
             editSection.style.display =
@@ -714,7 +735,8 @@ editForm.addEventListener(
             );
 
             alert(
-                "Could not update application."
+                "Could not update application: " +
+                error.message
             );
         }
     }
@@ -768,20 +790,21 @@ async function deleteApplication(id) {
 
         if (!response.ok) {
 
+            const errorData =
+                await response.json().catch(
+                    () => ({})
+                );
+
             throw new Error(
+                errorData.error ||
                 "Failed to delete application."
             );
         }
 
 
-        applications =
-            applications.filter(
-                application =>
-                    application.id !== id
-            );
+        // Reload from the database.
 
-
-        displayApplications();
+        await loadApplications();
 
 
     } catch (error) {
@@ -792,7 +815,8 @@ async function deleteApplication(id) {
         );
 
         alert(
-            "Could not delete application."
+            "Could not delete application: " +
+            error.message
         );
     }
 }
@@ -840,15 +864,21 @@ clearAllButton.addEventListener(
 
             if (!response.ok) {
 
+                const errorData =
+                    await response.json().catch(
+                        () => ({})
+                    );
+
                 throw new Error(
+                    errorData.error ||
                     "Failed to clear applications."
                 );
             }
 
 
-            applications = [];
+            // Reload from the database.
 
-            displayApplications();
+            await loadApplications();
 
 
         } catch (error) {
@@ -859,7 +889,8 @@ clearAllButton.addEventListener(
             );
 
             alert(
-                "Could not clear applications."
+                "Could not clear applications: " +
+                error.message
             );
         }
     }
